@@ -10,9 +10,7 @@
    * @version     2.0
    * @link        http://www.yubico.com/
    */
-
 require_once 'PEAR.php';
-
 /**
  * Class for verifying Yubico One-Time-Passcodes
  *
@@ -37,61 +35,51 @@ class Auth_Yubico
 	/**#@+
 	 * @access private
 	 */
-
 	/**
 	 * Yubico client ID
 	 * @var string
 	 */
 	var $_id;
-
 	/**
 	 * Yubico client key
 	 * @var string
 	 */
 	var $_key;
-
 	/**
 	 * URL part of validation server
 	 * @var string
 	 */
 	var $_url;
-
 	/**
 	 * List with URL part of validation servers
 	 * @var array
 	 */
 	var $_url_list;
-
 	/**
 	 * index to _url_list
 	 * @var int
 	 */
 	var $_url_index;
-
 	/**
 	 * Last query to server
 	 * @var string
 	 */
 	var $_lastquery;
-
 	/**
 	 * Response from server
 	 * @var string
 	 */
 	var $_response;
-
 	/**
 	 * Flag whether to use https or not.
 	 * @var boolean
 	 */
 	var $_https;
-
 	/**
 	 * Flag whether to verify HTTPS server certificates or not.
 	 * @var boolean
 	 */
 	var $_httpsverify;
-
 	/**
 	 * Constructor
 	 *
@@ -111,7 +99,6 @@ class Auth_Yubico
 		$this->_https = $https;
 		$this->_httpsverify = $httpsverify;
 	}
-
 	/**
 	 * Specify to use a different URL part for verification.
 	 * The default is "api.yubico.com/wsapi/verify".
@@ -123,7 +110,6 @@ class Auth_Yubico
 	{
 		$this->_url = $url;
 	}
-
 	/**
 	 * Get URL part to use for validation.
 	 *
@@ -138,8 +124,6 @@ class Auth_Yubico
 			return "api.yubico.com/wsapi/verify";
 		}
 	}
-
-
 	/**
 	 * Get next URL part from list to use for validation.
 	 *
@@ -158,7 +142,6 @@ class Auth_Yubico
 	  if ($this->_url_index>=count($url_list)) return false;
 	  else return $url_list[$this->_url_index++];
 	}
-
 	/**
 	 * Resets index to URL list
 	 *
@@ -168,7 +151,6 @@ class Auth_Yubico
 	{
 	  $this->_url_index=0;
 	}
-
 	/**
 	 * Add another URLpart.
 	 *
@@ -189,7 +171,6 @@ class Auth_Yubico
 	{
 		return $this->_lastquery;
 	}
-
 	/**
 	 * Return the last data received from the server, if any.
 	 *
@@ -200,7 +181,6 @@ class Auth_Yubico
 	{
 		return $this->_response;
 	}
-
 	/**
 	 * Parse input string into password, yubikey prefix,
 	 * ciphertext, and OTP.
@@ -233,9 +213,7 @@ class Auth_Yubico
 	  $ret['ciphertext'] = $matches[5];
 	  return $ret;
 	}
-
 	/* TODO? Add functions to get parsed parts of server response? */
-
 	/**
 	 * Parse parameters from last response
 	 *
@@ -260,7 +238,6 @@ class Auth_Yubico
 	  }
 	  return $param_array;
 	}
-
 	/**
 	 * Verify Yubico OTP against multiple URLs
 	 * Protocol specification 2.0 is used to construct validation requests
@@ -305,7 +282,6 @@ class Auth_Yubico
 	    $signature = preg_replace('/\+/', '%2B', $signature);
 	    $parameters .= '&h=' . $signature;
 	  }
-
 	  /* Generate and prepare request. */
 	  $this->_lastquery=null;
 	  $this->URLreset();
@@ -320,7 +296,6 @@ class Auth_Yubico
 		$query = "http://";
 	      }
 	      $query .= $URLpart . "?" . $parameters;
-
 	      if ($this->_lastquery) { $this->_lastquery .= " "; }
 	      $this->_lastquery .= $query;
 	      
@@ -340,7 +315,6 @@ class Auth_Yubico
 	      
 	      $ch[(int)$handle] = $handle;
 	    }
-
 	  /* Execute and read request. */
 	  $this->_response=null;
 	  $replay=False;
@@ -350,12 +324,9 @@ class Auth_Yubico
 	    while (($mrc = curl_multi_exec($mh, $active))
 		   == CURLM_CALL_MULTI_PERFORM)
 	      ;
-
 	    while ($info = curl_multi_info_read($mh)) {
 	      if ($info['result'] == CURLE_OK) {
-
 		/* We have a complete response from one server. */
-
 		$str = curl_multi_getcontent($info['handle']);
 		$cinfo = curl_getinfo ($info['handle']);
 		
@@ -363,10 +334,8 @@ class Auth_Yubico
 		  $this->_response .= 'URL=' . $cinfo['url'] ."\n"
 		    . $str . "\n";
 		}
-
 		if (preg_match("/status=([a-zA-Z0-9_]+)/", $str, $out)) {
 		  $status = $out[1];
-
 		  /* 
 		   * There are 3 cases.
 		   *
@@ -403,11 +372,9 @@ class Auth_Yubico
 			$check = $check . $param . '=' . $response[$param];
 		      }
 		    }
-
 		    $checksignature =
 		      base64_encode(hash_hmac('sha1', utf8_encode($check),
 					      $this->_key, true));
-
 		    if($response['h'] == $checksignature) {
 		      if ($status == 'REPLAYED_OTP') {
 			if (!$wait_for_all) { $this->_response = $str; }
@@ -450,12 +417,10 @@ class Auth_Yubico
 	      curl_multi_select($mh);
 	    }
 	  } while ($active);
-
 	  /* Typically this is only reached for wait_for_all=true or
 	   * when the timeout is reached and there is no
 	   * OK/REPLAYED_REQUEST answer (think firewall).
 	   */
-
 	  foreach ($ch as $h) {
 	    curl_multi_remove_handle ($mh, $h);
 	    curl_close ($h);
